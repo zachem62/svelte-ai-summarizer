@@ -1,24 +1,26 @@
+import { OPENAI_API_KEY } from '$env/static/private';
 import type { RequestHandler } from '@sveltejs/kit';
 import OpenAI from 'openai';
 
+if (!OPENAI_API_KEY) {
+	throw new Error('Missing OpenAI API key');
+}
+
 const openai = new OpenAI({
-	apiKey: process.env.OPENAI_API_KEY
+	apiKey: OPENAI_API_KEY
 });
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const { texts } = await request.json();
-
-		if (!texts || !Array.isArray(texts)) {
+		if (!texts || typeof texts !== 'string' || texts.trim().length === 0) {
 			return new Response(JSON.stringify({ error: 'Invalid input' }), {
 				status: 400,
 				headers: { 'Content-Type': 'application/json' }
 			});
 		}
 
-		const prompt = `Please summarize the following texts into a cohesive markdown-formatted blog post:\n\n${texts.join(
-			'\n\n'
-		)}`;
+		const prompt = `Summarize the following text:\n\n${texts}`;
 
 		const response = await openai.chat.completions.create({
 			model: 'gpt-3.5-turbo',
