@@ -1,18 +1,18 @@
-import { OPENAI_API_KEY } from '$env/static/private';
 import type { RequestHandler } from '@sveltejs/kit';
 import OpenAI from 'openai';
 
-if (!OPENAI_API_KEY) {
+if (!process.env.OPENAI_API_KEY) {
 	throw new Error('Missing OpenAI API key');
 }
 
 const openai = new OpenAI({
-	apiKey: OPENAI_API_KEY
+	apiKey: process.env.OPENAI_API_KEY
 });
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const { texts } = await request.json();
+		
 		if (!texts || typeof texts !== 'string' || texts.trim().length === 0) {
 			return new Response(JSON.stringify({ error: 'Invalid input' }), {
 				status: 400,
