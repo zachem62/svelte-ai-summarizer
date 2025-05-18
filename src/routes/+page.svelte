@@ -3,12 +3,13 @@
 	import { marked } from 'marked';
 	import { writable } from 'svelte/store';
 	import { clsx } from 'clsx';
+	import type { SummarizeRequest } from '$lib/types';
 
 	let input = writable<string>('');
 	let markdown = writable<string>('');
 	let loading = writable<boolean>(false);
 	let error = writable<string>('');
-
+	
 	const handleInputChange = (value: string) => {
 		input.update((current) => {
 			current = value;
@@ -18,18 +19,38 @@
 	};
 
 	const handleSubmit = async () => {
+		// Trim input to remove leading/trailing spaces
+		// Prevent empty or whitespace-only submissions
+		const trimmed = $input.trim();
+
+		if (trimmed.length === 0) {
+			// Set a user-visible error message
+			error.set("Please enter some text.");
+			return;
+		}
+		
+		// Construct request body based on shared input contract (SummarizeRequest)
+		// Ensures structural consistency with backend expectations
+		const requestBody: SummarizeRequest = {
+			text: trimmed
+		}
 		loading.set(true);
 		error.set('');
 		markdown.set('');
 
 		try {
-			const response = await axios.post('/api/summarize', {
-				texts: $input
-			});
+			// Send the input to the backend summarization endpoint
+			const response = await axios.post('/api/summarize', requestBody);
 
+			// Save returned summary to reactive store for display
 			markdown.set(response.data.markdown);
+
+			// Clear any prior errors
+			error.set('');
 		} catch (err: any) {
+			// Fallback for failed request (network or backend error)
 			console.error('Submission Error:', err);
+			
 			error.set(err.response?.data?.error || 'An error occurred');
 		} finally {
 			loading.set(false);
